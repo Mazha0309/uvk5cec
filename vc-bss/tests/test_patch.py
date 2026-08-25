@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from patch_firmware import encode_thumb_b, encode_thumb_bl
+from patch_firmware import encode_thumb_b, encode_thumb_bl, welcome_message_patch
 
 
 class ThumbEncodingTests(unittest.TestCase):
@@ -14,6 +14,15 @@ class ThumbEncodingTests(unittest.TestCase):
 
     def test_short_forward_branch(self) -> None:
         self.assertEqual(encode_thumb_b(0x92C6, 0x92DA), bytes.fromhex("08e0"))
+
+    def test_welcome_message_patch(self) -> None:
+        self.assertEqual(
+            welcome_message_patch(0x7E9A),
+            bytes.fromhex(
+                "06a8aa21fbf785fe2000ab21fbf781fe"
+                "c046c046c046c046d7e7"
+            ),
+        )
 
 
 if __name__ == "__main__":

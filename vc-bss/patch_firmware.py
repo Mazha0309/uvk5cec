@@ -27,6 +27,10 @@ CAVE_START = 0x3DC4
 CAVE_END = 0x4538
 MENU_START = 0xE178
 MENU_RECORD_SIZE = 9
+WELCOME_MESSAGE_START = 0xC188
+WELCOME_MESSAGE_END = 0xC1A2
+UINFO_MY_CALL = 0xAA
+UINFO_MY_NAME = 0xAB
 
 
 def crc16_xmodem(data: bytes) -> int:
@@ -89,6 +93,21 @@ def encode_thumb_b(source: int, target: int) -> bytes:
     return struct.pack("<H", 0xE000 | ((offset >> 1) & 0x7FF))
 
 
+def welcome_message_patch(settings_fetch_channel_name: int) -> bytes:
+    """Render U.Info MY CALL and MY NAME in POnMsg MESSAGE mode."""
+    patch = (
+        bytes.fromhex("06a8aa21")  # add r0,sp,#24; movs r1,#0xAA (MY CALL)
+        + encode_thumb_bl(0xC18C, settings_fetch_channel_name)
+        + bytes.fromhex("2000ab21")  # movs r0,r4; movs r1,#0xAB (MY NAME)
+        + encode_thumb_bl(0xC194, settings_fetch_channel_name)
+        + bytes.fromhex("c046c046c046c046")
+        + encode_thumb_b(0xC1A0, 0xC152)
+    )
+    if len(patch) != WELCOME_MESSAGE_END - WELCOME_MESSAGE_START:
+        raise AssertionError("welcome message patch has an unexpected size")
+    return patch
+
+
 def read_symbols(path: Path) -> dict[str, int]:
     symbols: dict[str, int] = {}
     pattern = re.compile(r"^([0-9a-fA-F]+)\s+\w\s+(\S+)$")
@@ -136,7 +155,13 @@ def patch_image(raw: bytearray, injection: bytes, symbols: dict[str, int]) -> No
         raise ValueError("input is not the exact official CEC 0.3VC raw image")
     if len(injection) > CAVE_END - CAVE_START:
         raise ValueError(f"injection is {len(injection)} bytes; cave holds {CAVE_END - CAVE_START}")
-    for required in ("bss_tail_hook", "format_uinfo_label", "roger_option_label", "inject_end"):
+    for required in (
+        "bss_tail_hook",
+        "format_uinfo_label",
+        "roger_option_label",
+        "SETTINGS_FetchChannelName",
+        "inject_end",
+    ):
         if required not in symbols:
             raise ValueError(f"missing injection symbol: {required}")
     if symbols["bss_tail_hook"] != CAVE_START:
@@ -195,6 +220,20 @@ def patch_image(raw: bytearray, injection: bytes, symbols: dict[str, int]) -> No
         bytes.fromhex("190004a8")
         + encode_thumb_bl(0x92C2, symbols["format_uinfo_label"])
         + encode_thumb_b(0x92C6, 0x92DA)
+    )
+
+    # CEC 0.3VC's MESSAGE startup screen reads two legacy EEPROM strings at
+    # 0x0EB0/0x0EC0, which are unrelated to the U.Info editor.  Read the
+    # existing MY CALL and MY NAME fields instead, so the screen follows the
+    # values configured on the radio without allocating new EEPROM storage.
+    require_bytes(
+        raw,
+        WELCOME_MESSAGE_START,
+        bytes.fromhex("eb2006a910220001f6f7b0f9ec20102221000001f6f7aaf9d7e7"),
+        "POnMsg MESSAGE legacy welcome strings",
+    )
+    raw[WELCOME_MESSAGE_START:WELCOME_MESSAGE_END] = welcome_message_patch(
+        symbols["SETTINGS_FetchChannelName"]
     )
 
     for address, expected in (

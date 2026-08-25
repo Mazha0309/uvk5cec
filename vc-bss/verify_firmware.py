@@ -13,10 +13,13 @@ from patch_firmware import (
     CAVE_START,
     MENU_RECORD_SIZE,
     MENU_START,
+    WELCOME_MESSAGE_END,
+    WELCOME_MESSAGE_START,
     encode_thumb_b,
     encode_thumb_bl,
     read_symbols,
     unpack_firmware,
+    welcome_message_patch,
 )
 
 
@@ -45,6 +48,7 @@ def main() -> None:
     assert symbols["CEC_APRS_Setup"] == 0x1B60
     assert symbols["CEC_APRS_Stop"] == 0x1684
     assert symbols["CEC_HDLC_SendByte"] == 0x1500
+    assert symbols["SETTINGS_FetchChannelName"] == 0x7E9A
     assert raw[0x4C9A:0x4C9E] == encode_thumb_bl(0x4C9A, symbols["bss_tail_hook"])
     assert raw[0x4D18:0x4D1C] == base_raw[0x4D18:0x4D1C]
     assert raw[0x92C2:0x92C6] == encode_thumb_bl(0x92C2, symbols["format_uinfo_label"])
@@ -53,6 +57,9 @@ def main() -> None:
         bytes.fromhex("01000023")
         + encode_thumb_b(0x942E, 0x8D8C)
         + bytes.fromhex("c046")
+    )
+    assert raw[WELCOME_MESSAGE_START:WELCOME_MESSAGE_END] == welcome_message_patch(
+        symbols["SETTINGS_FetchChannelName"]
     )
     assert symbols["inject_end"] <= CAVE_END
 
@@ -122,6 +129,7 @@ def main() -> None:
         (0xB22C, 0xB22E),
         (0xB558, 0xB55A),
         (0xBEAE, 0xBEB2),
+        (WELCOME_MESSAGE_START, WELCOME_MESSAGE_END),
         (0xDC38, 0xDC43),
         (MENU_START, MENU_START + 73 * MENU_RECORD_SIZE),
     ]
@@ -135,6 +143,7 @@ def main() -> None:
     print(f"verified packed SHA-256: {hashlib.sha256(args.packed.read_bytes()).hexdigest()}")
     print(f"injection end: 0x{symbols['inject_end']:04X}; cave end: 0x{CAVE_END:04X}")
     print("menu: Roger adds BSS; BSS POS is OFF/ON; CW KEY, DIG.M and T.WSPR removed")
+    print("startup MESSAGE: U.Info MY CALL + MY NAME")
 
 
 if __name__ == "__main__":

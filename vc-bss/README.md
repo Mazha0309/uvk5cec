@@ -20,6 +20,8 @@ Changes:
   `OFF`/`ON` switch, while disabling the old key-runtime branches;
 - uses the existing `MY CALL`, `GPS LAT` and `GPS LON` fields without modifying
   their storage;
+- changes `POnMsg` -> `MESSAGE` to show `U.Info` `MY CALL` on the first line
+  and `MY NAME` on the second, instead of the unrelated legacy welcome slots;
 - mutes the local speaker during the BSS tail and restores the previous speaker
   gain immediately afterward, without changing the transmitted AFSK level;
 - identifies both the raw firmware and packed update image as `Mazha0309`.
