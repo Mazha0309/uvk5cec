@@ -1,3 +1,17 @@
+# Mazha0309 CEC 0.3VC BSS patch
+
+This fork adds a reproducible binary patch for the official CEC 0.3VC image.
+It provides a Vero-compatible BSS AFSK tail selected explicitly from
+`Roger -> BSS`, a persistent `BSSPOS` OFF/ON switch, configurable UID and
+optional position data, and silent local monitoring.  The transmitted BSS
+frame has been recognized successfully by HT.
+
+- Patch source and build notes: [`vc-bss/`](vc-bss/)
+- Flashable packed firmware: [GitHub Releases](../../releases)
+
+CEC is by KD8CEC/phdlee and the UV-K5 open-firmware contributors.  This BSS
+adaptation is authored for Mazha0309 with implementation by GPT-5.6 Sol.
+
 # Version 0.1HF (January 19, 2024) - (another version)
 Detailed explanations are provided in the link below.
 http://www.hamskey.com
