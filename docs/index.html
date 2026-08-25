@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#111827">
+  <meta name="description" content="CEC 0.3VC BSS 补丁的威诺 BSS 解析与 Web Serial 固件刷写工具。">
+  <title>CEC BSS Lab</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到主内容</a>
+
+  <header class="site-header">
+    <div class="header-copy">
+      <p class="eyebrow">CEC 0.3VC / UV-K5 · LOCAL WEB TOOL</p>
+      <h1>CEC BSS Lab</h1>
+      <p class="lede">CEC 0.3VC 威诺 BSS 信令解析与固件刷写。数据全部在浏览器本地处理。</p>
+      <div class="header-links">
+        <a class="button secondary" href="https://github.com/Mazha0309/uvk5cec/releases/latest" target="_blank" rel="noreferrer">下载 CEC BSS 固件 ↗</a>
+        <a class="text-link" href="https://github.com/phdlee/uvk5cec" target="_blank" rel="noreferrer">上游 CEC 仓库 ↗</a>
+      </div>
+    </div>
+    <aside class="identity-card" aria-label="项目身份">
+      <span class="status-dot"></span>
+      <div>
+        <strong>CEC 0.3VC BSS 社区补丁</strong>
+        <p>由 phdlee/uvk5cec fork 而来<br>BSS 补丁作者 Mazha0309<br>GPT-5.6 Sol 辅助实现</p>
+      </div>
+    </aside>
+  </header>
+
+  <nav class="tabs" aria-label="工具切换">
+    <button class="tab active" type="button" data-tab="bss" aria-selected="true">BSS 解析</button>
+    <button class="tab danger-tab" type="button" data-tab="flash" aria-selected="false">固件刷写</button>
+  </nav>
+
+  <main id="main">
+    <section id="panel-bss" class="panel active" data-panel="bss">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">AFSK PAYLOAD INSPECTOR</p>
+          <h2>威诺 BSS 身份包解析</h2>
+        </div>
+        <span class="pill">01 8B + TLV</span>
+      </div>
+
+      <div class="two-column">
+        <div class="card">
+          <label for="bss-input">十六进制载荷</label>
+          <textarea id="bss-input" rows="7" spellcheck="false" placeholder="粘贴 AFSK 十六进制载荷"></textarea>
+          <div class="button-row">
+            <button id="parse-bss" class="button primary" type="button">解析</button>
+          </div>
+          <p class="hint">可直接粘贴 <code>AFSK[28]:...</code>、空格分隔或纯 hex。</p>
+        </div>
+
+        <div id="bss-summary" class="card result-card" aria-live="polite">
+          <p class="empty-state">等待解析。结果会显示 User ID、呼号、位置、海拔和航向。</p>
+        </div>
+      </div>
+
+      <div class="card table-card">
+        <div class="card-title-row">
+          <h3>字段明细</h3>
+          <span id="bss-byte-count" class="muted">—</span>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>偏移</th><th>原始字节</th><th>字段</th><th>解码</th></tr></thead>
+            <tbody id="bss-fields"><tr><td colspan="4" class="muted">暂无数据</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="panel-flash" class="panel" data-panel="flash" hidden>
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">BOOTLOADER FLASHER</p>
+          <h2>浏览器固件刷写</h2>
+        </div>
+        <span class="pill danger">FLASH 有风险</span>
+      </div>
+
+      <div class="danger-notice">
+        <strong>先备份配置和校准数据。</strong>刷写中不要断电、拔线或关闭页面。只接受 CRC 正确且版本为 <code>*Mazha0309 03VC</code> 的本项目打包固件，最大 0xEFFF 字节。
+      </div>
+
+      <div class="steps" aria-label="刷机步骤">
+        <div><span>1</span><p>关机，按住 <strong>PTT</strong> 再开机，手电筒常亮即进入刷机模式。</p></div>
+        <div><span>2</span><p>连接写频线，选择本项目 Releases 发布的打包 <code>.bin</code>。</p></div>
+        <div><span>3</span><p>确认文件信息和风险，再授权浏览器使用串口。</p></div>
+      </div>
+
+      <div class="two-column flash-layout">
+        <div class="card">
+          <label for="firmware-file">打包固件</label>
+          <input id="firmware-file" type="file" accept=".bin,application/octet-stream">
+          <div id="firmware-info" class="file-info">未选择文件。</div>
+          <label class="check-row confirm-row">
+            <input id="flash-confirm" type="checkbox">
+            我已确认机型、备份数据，并知道刷写失败可能导致手台无法启动。
+          </label>
+          <button id="flash-firmware" class="button danger-button" type="button" disabled>连接刷机模式并写入</button>
+        </div>
+
+        <div class="card">
+          <div class="metric"><span>阶段</span><strong id="flash-stage">等待文件</strong></div>
+          <div class="metric"><span>进度</span><strong id="flash-percent">0%</strong></div>
+          <progress id="flash-progress" max="100" value="0"></progress>
+          <pre id="flash-log" class="log" aria-live="polite">请先选择固件。</pre>
+        </div>
+      </div>
+
+      <p class="compat-note">需要 Chromium 系浏览器（Chrome / Edge）与 HTTPS 或 localhost。Firefox 和 Safari 目前不支持 Web Serial。刷写前请从 <a href="https://github.com/Mazha0309/uvk5cec/releases/latest" target="_blank" rel="noreferrer">本项目 Releases</a> 下载固件。
+      </p>
+    </section>
+
+    <section class="disclaimer-section" aria-labelledby="disclaimer-title">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">DISCLAIMER</p>
+          <h2 id="disclaimer-title">免责声明</h2>
+        </div>
+        <span class="pill warning">使用前请阅读</span>
+      </div>
+
+      <div class="card disclaimer-card">
+        <p><strong>本页是非官方社区工具，不代表泉盛、威诺或上游 CEC 项目的立场，也不提供任何官方担保。</strong></p>
+        <ul>
+          <li>BSS 解析仅用于协议研究、兼容性测试和处理你有权查看的数据；请勿冒用他人身份或用于未经授权的通信。</li>
+          <li>刷写固件可能造成配置或校准数据丢失、设备无法启动，甚至硬件损坏。请先备份，并自行核对机型、固件来源和兼容性。</li>
+          <li>无线电发射须遵守所在地关于执照、频率、功率、呼号和通信内容的法律法规。</li>
+          <li>本工具按现状提供，不承诺适用性或无故障。因使用或无法使用本工具造成的损失，由使用者自行承担。</li>
+          <li>解析、固件校验和串口通信均在当前浏览器中完成；本页代码不会主动上传你输入的数据、固件或串口内容。</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p><strong>配套工具页作者：Mazha0309</strong></p>
+    <p>刷机协议已与 <a href="https://github.com/silenty4ng/k5web" target="_blank" rel="noreferrer">K5Web 公开源码</a> 和社区项目 <a href="https://github.com/egzumer/uvtools" target="_blank" rel="noreferrer">egzumer/uvtools</a> 交叉核对。</p>
+  </footer>
+</body>
+</html>

@@ -7,7 +7,6 @@ firmware
 .cache
 compile_commands.json
 .vscode
-/docs
 k5_eeprom.raw
 /vc-bss/build/
 __pycache__/

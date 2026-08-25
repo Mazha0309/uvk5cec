@@ -8,6 +8,7 @@ frame has been recognized successfully by HT.
 
 - Patch source and build notes: [`vc-bss/`](vc-bss/)
 - Flashable packed firmware: [GitHub Releases](../../releases)
+- Browser BSS parser and flasher: [GitHub Pages](https://mazha0309.github.io/uvk5cec/)
 
 CEC is by KD8CEC/phdlee and the UV-K5 open-firmware contributors.  This BSS
 adaptation is authored for Mazha0309 with implementation by GPT-5.6 Sol.
