@@ -14,6 +14,7 @@ enum {
 };
 
 extern void SETTINGS_FetchChannelName(char *output, int16_t id);
+extern void CEC_AudioPathOff(void);
 extern uint16_t BK4819_ReadRegister(uint8_t register_number);
 extern void BK4819_WriteRegister(uint8_t register_number, uint16_t value);
 extern void CEC_APRS_Setup(void);
@@ -206,13 +207,18 @@ int bss_send_tail(void)
 	 * three AF gain stages while preserving the unrelated upper nibble. */
 	const uint16_t muted_af_volume = (uint16_t)(
 		normal_af_volume & (uint16_t)~BK4819_AF_LEVEL_MASK);
-	/* Set this both before and after setup: setup may rewrite REG 0x48 while
-	 * configuring the TX path, and the first write prevents an audible onset. */
+	/* REG 0x48 alone does not silence CEC's APRS monitor: CEC_APRS_Setup also
+	 * enables the external speaker amplifier through GPIOC AUDIO_PATH.  Keep
+	 * both mute layers off before setup, immediately after setup re-enables the
+	 * amplifier, and once more after shutdown.  The caller's normal post-TX
+	 * cleanup owns the next legitimate speaker enable. */
+	CEC_AudioPathOff();
 	BK4819_WriteRegister(BK4819_REG_AF_VOLUME, muted_af_volume);
 	/* Mirror CEC's native APRS wrapper exactly around radio setup. */
 	APRS_SETUP_FLAG = 1;
 	CEC_APRS_Setup();
 	APRS_SETUP_FLAG = 0;
+	CEC_AudioPathOff();
 	BK4819_WriteRegister(BK4819_REG_AF_VOLUME, muted_af_volume);
 	/* HDLC_SendByte waits on the timer flag driven by this native CEC clock.
 	 * Without it, transmission remains forever on the setup's initial tone. */
@@ -234,6 +240,7 @@ int bss_send_tail(void)
 	 * must be paired with the same full shutdown used by CEC's native APRS
 	 * sender; the ordinary Roger/DTMF cleanup alone does not release it. */
 	CEC_APRS_Stop();
+	CEC_AudioPathOff();
 	BK4819_WriteRegister(BK4819_REG_AF_VOLUME, normal_af_volume);
 	return 1;
 }

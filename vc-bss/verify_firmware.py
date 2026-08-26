@@ -43,6 +43,7 @@ def main() -> None:
 
     symbols = read_symbols(args.symbols)
     assert symbols["CEC_APRS_ClockStart"] == 0x0BC4
+    assert symbols["CEC_AudioPathOff"] == 0x0B50
     assert symbols["BK4819_ReadRegister"] == 0x1178
     assert symbols["BK4819_WriteRegister"] == 0x13C8
     assert symbols["CEC_APRS_Setup"] == 0x1B60
@@ -91,6 +92,17 @@ def main() -> None:
         assert len(hits) == 1, f"expected one APRS {name} call, got {hits}"
         lifecycle_calls.append(hits[0])
     assert lifecycle_calls == sorted(lifecycle_calls)
+
+    # REG 0x48 is not a complete local mute because APRS setup explicitly
+    # enables GPIOC AUDIO_PATH.  The BSS path must shut that amplifier off
+    # before setup, after setup, and after APRS shutdown.
+    audio_off_calls = [
+        address for address in range(function_start, function_end, 2)
+        if raw[address:address + 4] == encode_thumb_bl(address, 0x0B50)
+    ]
+    assert len(audio_off_calls) == 3, audio_off_calls
+    assert audio_off_calls[0] < lifecycle_calls[0] < audio_off_calls[1]
+    assert lifecycle_calls[2] < audio_off_calls[2]
 
     for address in (0x46C0, 0x568E, 0xBEAE):
         assert raw[address:address + 4] == bytes.fromhex("c046c046")

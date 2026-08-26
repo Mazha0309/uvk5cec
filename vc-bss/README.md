@@ -22,8 +22,8 @@ Changes:
   their storage;
 - changes `POnMsg` -> `MESSAGE` to show `U.Info` `MY CALL` on the first line
   and `MY NAME` on the second, instead of the unrelated legacy welcome slots;
-- mutes the local speaker during the BSS tail and restores the previous speaker
-  gain immediately afterward, without changing the transmitted AFSK level;
+- mutes both the BK4819 AF gain and the independent GPIOC speaker-amplifier
+  path throughout the BSS tail, without changing the transmitted AFSK level;
 - identifies both the raw firmware and packed update image as `Mazha0309`.
 
 `BSS UID` accepts decimal or `0x` hexadecimal.  Select `Roger` -> `BSS` to

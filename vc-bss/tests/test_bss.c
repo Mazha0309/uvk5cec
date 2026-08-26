@@ -24,6 +24,8 @@ static uint8_t gSentCount;
 static uint8_t gSetupCount;
 static uint8_t gClockStartCount;
 static uint8_t gStopCount;
+static uint8_t gAudioPathOffCount;
+static uint8_t gAudioPathEnabled;
 static uint8_t gLifecycle;
 static uint16_t gAfVolume;
 static uint16_t gVolumeWrites[3];
@@ -74,7 +76,20 @@ void CEC_APRS_Setup(void)
     assert(gLifecycle == 0);
     assert(gHostAprsSetupFlag == 1);
     gLifecycle = 1;
+    gAudioPathEnabled = 1;
     ++gSetupCount;
+}
+
+void CEC_AudioPathOff(void)
+{
+    if (gAudioPathOffCount == 0)
+        assert(gLifecycle == 0);
+    else if (gAudioPathOffCount == 1)
+        assert(gLifecycle == 1);
+    else
+        assert(gLifecycle == 3);
+    gAudioPathEnabled = 0;
+    ++gAudioPathOffCount;
 }
 
 void CEC_APRS_ClockStart(uint8_t aprs_mode)
@@ -121,6 +136,8 @@ static void Configure(const char *position)
     gSetupCount = 0;
     gClockStartCount = 0;
     gStopCount = 0;
+    gAudioPathOffCount = 0;
+    gAudioPathEnabled = 1;
     gLifecycle = 0;
     gHostAprsSetupFlag = 0;
     gAfVolume = 0xB3A8;
@@ -158,6 +175,8 @@ static void TestTailAndFcs(void)
     assert(gSetupCount == 1);
     assert(gClockStartCount == 1);
     assert(gStopCount == 1);
+    assert(gAudioPathOffCount == 3);
+    assert(gAudioPathEnabled == 0);
     assert(gLifecycle == 3);
     assert(gVolumeWriteCount == 3);
     assert(gVolumeWrites[0] == 0xB000);
@@ -190,6 +209,7 @@ static void TestDisabledUid(void)
     assert(bss_send_tail() == 0);
     assert(gSetupCount == 0 && gClockStartCount == 0 &&
            gStopCount == 0 && gSentCount == 0 && gLifecycle == 0 &&
+           gAudioPathOffCount == 0 && gAudioPathEnabled == 1 &&
            gVolumeWriteCount == 0 && gAfVolume == 0xB3A8);
 }
 
@@ -200,6 +220,7 @@ static void TestUidDoesNotEnableBss(void)
     assert(bss_send_tail() == 0);
     assert(gSetupCount == 0 && gClockStartCount == 0 &&
            gStopCount == 0 && gSentCount == 0 && gLifecycle == 0 &&
+           gAudioPathOffCount == 0 && gAudioPathEnabled == 1 &&
            gVolumeWriteCount == 0 && gAfVolume == 0xB3A8);
 }
 

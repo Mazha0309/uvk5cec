@@ -7,6 +7,7 @@ MEMORY
 
 /* Existing Thumb entry points in the official CEC 0.3VC image. */
 CEC_APRS_ClockStart = 0x00000BC5;
+CEC_AudioPathOff = 0x00000B51;
 BK4819_ReadRegister = 0x00001179;
 BK4819_WriteRegister = 0x000013C9;
 CEC_HDLC_SendByte = 0x00001501;
